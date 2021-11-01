@@ -1,0 +1,134 @@
+<canvas width=800 height=400 id=cnv style="border: 1px solid black"></canvas>
+<br>
+<label>x1</label>
+<input type=range value=0.20 step=0.01 min=0 max=1 id=inpx1>
+<label>y1</label>
+<input type=range value=0.20 step=0.01 min=0 max=1 id=inpy1>
+<br>
+<label>x2</label>
+<input type=range value=0.40 step=0.01 min=0 max=1 id=inpx2>
+<label>y2</label>
+<input type=range value=0.50 step=0.01 min=0 max=1 id=inpy2>
+<br>
+<label>x3</label>
+<input type=range value=0.60 step=0.01 min=0 max=1 id=inpx3>
+<label>y3</label>
+<input type=range value=0.10 step=0.01 min=0 max=1 id=inpy3>
+<br>
+<label>x4</label>
+<input type=range value=0.80 step=0.01 min=0 max=1 id=inpx4>
+<label>y4</label>
+<input type=range value=0.10 step=0.01 min=0 max=1 id=inpy4>
+<p>
+<h3>Explanation</h3>
+Take one of the lightly coloured polynomials, call it Pk(x). This polynomial
+equals the y coordinate of the point k at the x coordinate of the point k, and
+it equals zero at the x coordinate of any other marked point.
+</p>
+<p>
+It is not hard to show that P(x), the sum of these polynomials, passes through
+every marked point.
+</p>
+<p>
+Constructing Pk(x) is achieved by first multiplying the degree-1 polynomials with
+roots at the x coordinates of the marked points (excluding point k), then scaling
+the result so that it equals the y coordinate of the point k at the x coordinate
+of point k.
+</p>
+<p>
+Such a construction is unique (assuming multiplicity 1), and so is the sum of
+these polynomials.
+</p>
+<p>
+<h3>Observations</h3>
+If there are n points, then each Pk(x) is a polynomial of degree n-1. It follows
+that P(x) is also a polynomial of degree n-1.
+</p>
+<script>
+const ctx = cnv.getContext("2d");
+
+const base_poly = root => x => x - root;
+const mul_poly = ps => ps.reduce((ap, p) => x => p(x) * ap(x), x => 1);
+const add_poly = ps => ps.reduce((ap, p) => x => p(x) + ap(x), x => 0);
+const muls_poly = (k, p) => x => k * p(x);
+
+const plot_point = (x,y, point_radius=1) => {
+	const w = cnv.width - 1;
+	const h = cnv.height / 2;
+	ctx.fillRect(
+		x*w - point_radius, 
+		(1-y)*h - point_radius,
+		2*point_radius,
+		2*point_radius);
+}
+
+const plot = p => {
+	console.log(p(0), p(0.1), p(0.2), p(0.3), "...", p(1));
+	console.log("PLOTTING");
+	const w = cnv.width - 1;
+	for (let i = 0; i < w+1; ++i) {
+		const x = i / w;
+		const y = p(x);
+		plot_point(x, y);
+	}
+};
+
+const fit_points = pts => {
+};
+
+let x1 = 0.20, y1 = 0.20;
+let x2 = 0.40, y2 = 0.50;
+let x3 = 0.60, y3 = 0.10;
+let x4 = 0.80, y4 = 0.10;
+
+const point = (x, y) => ({x, y});
+const go = () => {
+	ctx.clearRect(0,0,cnv.width,cnv.height);
+	const pts = [point(x1, y1), point(x2, y2), point(x3, y3), point(x4, y4)];
+
+	const bases = [];
+	for (const pt of pts)
+		bases.push(base_poly(pt.x));
+
+	const fitted = [];
+	for (let i = 0; i < bases.length; ++i) {
+		const ps = bases.slice(0, i).concat(bases.slice(i+1));
+		const p = mul_poly(ps);
+		let k = pts[i].y / p(pts[i].x);
+		fitted.push(muls_poly(k, p));
+	}
+
+	ctx.lineWidth = 2;
+	ctx.strokeStyle = "#f88";
+	ctx.moveTo(0, cnv.height/2);
+	ctx.lineTo(cnv.width, cnv.height/2);
+	ctx.stroke();
+	
+	ctx.fillStyle = "#88f";
+	for (const p of fitted)
+		plot(p);
+
+	ctx.fillStyle = "#000";
+	const p = add_poly(fitted);
+	plot(p);
+
+	plot_point(x1, y1, 5);
+	plot_point(x2, y2, 5);
+	plot_point(x3, y3, 5);
+	plot_point(x4, y4, 5);
+};
+go();
+
+inpx1.addEventListener("change", e => { x1 = Number(inpx1.value); go(); })
+inpy1.addEventListener("change", e => { y1 = Number(inpy1.value); go(); })
+
+inpx2.addEventListener("change", e => { x2 = Number(inpx2.value); go(); })
+inpy2.addEventListener("change", e => { y2 = Number(inpy2.value); go(); })
+
+inpx3.addEventListener("change", e => { x3 = Number(inpx3.value); go(); })
+inpy3.addEventListener("change", e => { y3 = Number(inpy3.value); go(); })
+
+inpx4.addEventListener("change", e => { x4 = Number(inpx4.value); go(); })
+inpy4.addEventListener("change", e => { y4 = Number(inpy4.value); go(); })
+
+</script>
